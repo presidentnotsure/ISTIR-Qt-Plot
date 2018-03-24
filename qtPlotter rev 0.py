@@ -1,6 +1,7 @@
 import sys
 from PySide import QtGui, QtCore
 import numpy as np
+import pyperclip
 
 class Window(QtGui.QWidget):
     def __init__(self):
@@ -8,17 +9,19 @@ class Window(QtGui.QWidget):
         self.setGeometry(50, 50, 1366, 768)
         self.setWindowTitle("ISTIR Weld Data Plotter")
         self.setWindowIcon(QtGui.QIcon('par.ico'))
-        
+
         self.windowLayout = QtGui.QGridLayout(self)
         self.windowLayout.setContentsMargins(5,5,5,5)
         self.setLayout(self.windowLayout)
 
-        
         self.tabWidget = QtGui.QTabWidget(self)
         self.open_tab()
         self.setup_tab()
         self.plot_tab()
         self.about_tab()
+
+        self.tabWidget.currentChanged.connect(self.replot)
+        self.fileActiveList = []
 
         self.signals_header()
         self.axes()
@@ -102,9 +105,19 @@ class Window(QtGui.QWidget):
         self.signalLayout.addWidget(self.fileLabel,0,6,2,1)
 
     def axes(self):
+        self.vertUnoLowerVal = '0.0'
+        self.vertDosLowerVal = '0.0'
+        self.vertTresLowerVal = '0.0'
+        self.vertUnoUpperVal = '1.0'
+        self.vertDosUpperVal = '1.0'
+        self.vertTresUpperVal = '1.0'
+        self.horizLowerVal = '0.0'
+        self.horizUpperVal = '1.0'
+
         self.vertLabel = QtGui.QLabel("Define Vertical Axes' Values")
         self.vertAutoLabel = QtGui.QLabel('Auto')
         self.vertAutoCheck = QtGui.QCheckBox()
+        self.vertAutoCheck.setChecked(True)
         self.vertLowerLabel = QtGui.QLabel('Lower')
         self.vertUpperLabel = QtGui.QLabel('Upper')
         self.vertUnoLabel = QtGui.QLabel('1:')
@@ -113,16 +126,22 @@ class Window(QtGui.QWidget):
         self.vertUnoLowerButton = QtGui.QPushButton('◄')
         self.vertDosLowerButton = QtGui.QPushButton('◄')
         self.vertTresLowerButton = QtGui.QPushButton('◄')
-        self.vertUnoLowerEntry = QtGui.QLineEdit()
-        self.vertDosLowerEntry = QtGui.QLineEdit()
-        self.vertTresLowerEntry = QtGui.QLineEdit()
-        self.vertUnoUpperEntry = QtGui.QLineEdit()
-        self.vertDosUpperEntry = QtGui.QLineEdit()
-        self.vertTresUpperEntry = QtGui.QLineEdit()
+        self.vertUnoLowerEntry = QtGui.QLineEdit(str(self.vertUnoLowerVal))
+        self.vertDosLowerEntry = QtGui.QLineEdit(str(self.vertDosLowerVal))
+        self.vertTresLowerEntry = QtGui.QLineEdit(str(self.vertTresLowerVal))
+        self.vertUnoUpperEntry = QtGui.QLineEdit(str(self.vertUnoUpperVal))
+        self.vertDosUpperEntry = QtGui.QLineEdit(str(self.vertDosUpperVal))
+        self.vertTresUpperEntry = QtGui.QLineEdit(str(self.vertTresUpperVal))
+        #self.vertUnoLowerEntry.textChanged.connect()
+        #self.vertDosLowerEntry.textChanged.connect()
+        #self.vertTresLowerEntry.textChanged.connect()
+        #self.vertUnoUpperEntry.textChanged.connect()
+        #self.vertDosUpperEntry.textChanged.connect()
+        #self.vertTresUpperEntry.textChanged.connect()
         self.vertUnoUpperButton = QtGui.QPushButton('►')
         self.vertDosUpperButton = QtGui.QPushButton('►')
         self.vertTresUpperButton = QtGui.QPushButton('►')
-        self.vertSpace = QtGui.QLabel()        
+        self.vertSpace = QtGui.QLabel()
 
         self.vertLabel.setAlignment(QtCore.Qt.AlignHCenter | QtCore.Qt.AlignVCenter)
         self.vertAutoLabel.setFixedWidth(25)
@@ -175,11 +194,12 @@ class Window(QtGui.QWidget):
         self.horizLabel = QtGui.QLabel("Define Horizontal Axis' Values")
         self.horizAutoLabel = QtGui.QLabel('Auto')
         self.horizAutoCheck = QtGui.QCheckBox()
+        self.horizAutoCheck.setChecked(True)
         self.horizLowerLabel = QtGui.QLabel('Lower')
         self.horizUpperLabel = QtGui.QLabel('Upper')
         self.horizLowerButton = QtGui.QPushButton('◄')
-        self.horizLowerEntry = QtGui.QLineEdit()
-        self.horizUpperEntry = QtGui.QLineEdit()
+        self.horizLowerEntry = QtGui.QLineEdit(str(self.horizLowerVal))
+        self.horizUpperEntry = QtGui.QLineEdit(str(self.horizUpperVal))
         self.horizUpperButton = QtGui.QPushButton('►')
         self.horizSpace = QtGui.QLabel()
 
@@ -207,10 +227,13 @@ class Window(QtGui.QWidget):
         self.horizSpace.setFixedHeight(150)
 
         self.typeLabel = QtGui.QLabel('Define Horizontal\nAxis Type')
-        self.topRadio = QtGui.QRadioButton('Time')
-        self.bottomRadio = QtGui.QRadioButton('Time')
-
         self.typeLabel.setAlignment(QtCore.Qt.AlignHCenter | QtCore.Qt.AlignVCenter)
+        self.horizButtonGroup = QtGui.QButtonGroup()
+        self.topRadio = QtGui.QRadioButton('Time')
+        self.topRadio.setChecked(True)
+        self.bottomRadio = QtGui.QRadioButton('Distance')
+        self.horizButtonGroup.addButton(self.topRadio)
+        self.horizButtonGroup.addButton(self.bottomRadio)
 
         self.axesLayout.addWidget(self.vertLabel,0,1,1,4)
         self.axesLayout.addWidget(self.vertAutoLabel,1,0)
@@ -246,7 +269,7 @@ class Window(QtGui.QWidget):
 
         self.axesLayout.addWidget(self.typeLabel,10,1,2,2)
         self.axesLayout.addWidget(self.topRadio,10,3)
-        self.axesLayout.addWidget(self.bottomRadio,11,3)
+        #self.axesLayout.addWidget(self.bottomRadio,11,3)
         self.axesLayout.addWidget(self.horizSpace,12,1)
 
     def copy_signal(self):
@@ -390,7 +413,6 @@ class Window(QtGui.QWidget):
         self.prntScrnLayout.setAlignment(QtCore.Qt.AlignHCenter | QtCore.Qt.AlignTop)
         self.leftPlotLayout.addLayout(self.prntScrnLayout,22,0,1,4)
         
-        
     def left_plot(self):
         self.plotActiveLabel = QtGui.QLabel('Plot?')
         self.plotActiveLabel.setFixedHeight(25)
@@ -446,9 +468,6 @@ class Window(QtGui.QWidget):
         self.bottomCPlotLayout.addWidget(self.xValLabel)
         self.bottomCPlotLayout.addWidget(self.xUnitLabel)
         
-        
-        
-
     def about_tab(self):
         self.aboutTab = QtGui.QWidget()
         self.aboutTab.setLayout(QtGui.QHBoxLayout())
@@ -457,27 +476,125 @@ class Window(QtGui.QWidget):
         self.aboutTab.layout().addWidget(self.aboutLabel)
         self.tabWidget.addTab(self.aboutTab, "About")
 
+    def replot(self):
+        if self.tabWidget.currentIndex() == 2:
+            pass
 
-class open_file(QtGui.QWidget):
+    def add_active_files(self, input):
+        if str(input) not in self.fileActiveList:
+            self.fileActiveList.append(str(input))
+            self.fileActiveList.sort()
+            for item in signalsMaster:
+                if isinstance(item, str) is False:
+                    item.fileSelect.clear()
+                    item.fileSelect.addItems(self.fileActiveList)
+                    item.fileSelect.setParent = None
+                    self.signalLayout.addWidget(item.fileSelect, item.number + 1, 6)
+                    item.fileCombo.clear()
+                    item.fileCombo.addItems(self.fileActiveList)
+                    item.fileCombo.setParent = None
+                    self.leftPlotLayout.addWidget(item.fileCombo, 2 * item.number, 1)
+        self.horiz_radio_update()
+
+    def remove_active_files(self, input):
+        if str(input) in self.fileActiveList:
+            self.fileActiveList.remove(str(input))
+            self.fileActiveList.sort()
+            for item in signalsMaster:
+                if isinstance(item, str) is False:
+                    item.fileSelect.clear()
+                    item.fileSelect.addItems(self.fileActiveList)
+                    item.fileSelect.setParent = None
+                    self.signalLayout.addWidget(item.fileSelect, item.number + 1, 6)
+                    item.fileCombo.clear()
+                    item.fileCombo.addItems(self.fileActiveList)
+                    item.fileCombo.setParent = None
+                    self.leftPlotLayout.addWidget(item.fileCombo, 2 * item.number, 1)
+        self.horiz_radio_update()
+
+    def redline_signal_value(self):
+        pass
+
+    def horiz_radio_update(self):
+        self.radioList = []
+        self.count = 0
+        for item in signalsMaster:
+            if isinstance(item, str) == False:
+                self.radioList += item.selectList
+        for item in self.radioList:
+            if item == 'Weld Distance, in' or item == 'Weld Distance, mm':
+                self.count += 1
+        if self.count == 10:
+            self.axesLayout.addWidget(self.bottomRadio, 11, 3)
+        else:
+            self.bottomRadio.setParent(None)
+            self.topRadio.setChecked(True)
+
+    def vert_lower_auto_set(self, input):
+        minlist = maxlist = []
+        if self.bottomRadio.isChecked() == True:
+            for i,val in enumerate(openMaster):
+                if isinstance(val, str) == False:
+                    minlist.append(min(val.signalDict['plotDist']))
+                    maxlist.append(max(val.signalDict['plotDist']))
+        else:
+            for i,val in enumerate(openMaster):
+                if isinstance(val, str) == False:
+                    minlist.append(min(val.signalDict['plotTime']))
+                    maxlist.append(max(val.signalDict['plotTime']))
+
+        if input == 1:
+            self.vertUnoLowerEntry.setText(str(min(minlist)))
+        elif input == 2:
+            self.vertDosLowerEntry.setText(str(min(minlist)))
+        elif input == 3:
+            self.vertTresLowerEntry.setText(str(min(minlist)))
+        else:
+            pass
+
+
+
+
+
+
+        #1st input = upper/lower/both
+        #2nd input = axis number/all axes
+        max1 = max2 = max3 = newmax = 0.001
+        min1 = min2 = min3 = newmin = 0.0
+
+
+            for i, val in enumerate(signalsMaster):
+                if isinstance(val, str) == False
+                    val.
+
+        if input[1] == 1 or input[1] == '1'
+
+
+
+
+class open_file(QtGui.QFrame):
     def __init__(self,number):
         super(open_file, self).__init__()
         self.number = number
-        self.fileName = 'Test.dat'
-        self.fileNameShort = ''
+        self.isActive = False
+        self.fileName = ''
         self.offset  = 0.0
-        self.xListOffset = []
         self.schedule = []
         self.header = []
-        self.weldDistance = []
-        self.timeList = []
         self.signalDict = {}
         self.signalList = []
 
         self.openLayout = QtGui.QGridLayout()
+        self.setFrameShape(QtGui.QFrame.StyledPanel)
+        self.setFrameShadow(QtGui.QFrame.Raised)
         self.setLayout(self.openLayout)
+
+        self.setAcceptDrops(True)
 
         self.set_tab_pos()
         self.build_gui()
+
+
         
         GUI.openTabLayout.addWidget(self,self.openRow,self.openCol)
 
@@ -494,72 +611,121 @@ class open_file(QtGui.QWidget):
         self.setFixedHeight(120)
 
         self.bottomSpace = QtGui.QLabel()
-        self.openIndex = QtGui.QLabel(str(self.number))
+        self.openIndex = QtGui.QLabel('   '+str(self.number))
         self.radioSelect = QtGui.QRadioButton()
         self.openButton = QtGui.QPushButton('Open File')
         self.openButton.released.connect(self.file_grab)
         self.headerButton = QtGui.QPushButton('Read Header')
+        self.headerButton.released.connect(self.disp_header)
         self.scheduleButton = QtGui.QPushButton('Read WLD Program')
+        self.scheduleButton.released.connect(self.disp_schedule)
         self.clearButton = QtGui.QPushButton('Clear')
-        self.fileLabel = QtGui.QLabel(self.fileName)
+        self.clearButton.released.connect(self.deactivate)
+        self.fileLabel = QtGui.QLineEdit(self.fileName)
+        self.fileLabel.setReadOnly(True)
+
+        #self.fileLabel.setAlignment(QtCore.Qt.AlignBottom | QtCore.Qt.RightToLeft | QtCore.Qt.AlignJustify)
         self.offsetLabel = QtGui.QLabel('Horizontal Offset')
         self.offsetEntry = QtGui.QLineEdit(str(self.offset))
 
-        self.openIndex.setFixedWidth(15)
+        self.openIndex.setFixedWidth(30)
+        self.openIndex.setAlignment(QtCore.Qt.AlignHCenter | QtCore.Qt.AlignVCenter)
         self.radioSelect.setFixedWidth(15)
         self.openButton.setFixedHeight(30)
+        self.openButton.setFixedWidth(80)
         self.headerButton.setFixedHeight(30)
+        self.headerButton.setFixedWidth(100)
         self.scheduleButton.setFixedHeight(30)
-        self.clearButton.setFixedWidth(40)
+        self.scheduleButton.setFixedWidth(120)
+        self.clearButton.setFixedWidth(30)
         self.clearButton.setFixedHeight(30)
         self.fileLabel.setFixedHeight(30)
+        self.fileLabel.setFixedWidth(350)
         self.offsetLabel.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
         self.offsetLabel.setFixedHeight(30)
         self.offsetEntry.setFixedWidth(150)
         self.offsetEntry.setFixedHeight(30)
 
-        self.openLayout.addWidget(self.openIndex,0,0,1,1)
-        self.openLayout.addWidget(self.radioSelect,0,1,1,1)
+        self.openLayout.addWidget(self.openIndex,0,0,1,2)
+        #self.openLayout.addWidget(self.radioSelect,0,1,1,1)
         self.openLayout.addWidget(self.openButton,0,2,1,1)
-        self.openLayout.addWidget(self.headerButton,0,3,1,1)
-        self.openLayout.addWidget(self.scheduleButton,0,4,1,1)
+        #self.openLayout.addWidget(self.headerButton,0,3,1,1)
+        #self.openLayout.addWidget(self.scheduleButton,0,4,1,1)
         self.openLayout.addWidget(self.clearButton,1,0,1,2)
-        self.openLayout.addWidget(self.fileLabel,1,2,1,3)
+        self.openLayout.addWidget(self.fileLabel,1,2,1,4)
         self.openLayout.addWidget(self.offsetLabel,2,2,1,1)
-        self.openLayout.addWidget(self.offsetEntry,2,3,1,2)
-        self.openLayout.addWidget(self.bottomSpace,3,0,1,1)
+        self.openLayout.addWidget(self.offsetEntry,2,3,1,3)
+        #self.openLayout.addWidget(self.bottomSpace,3,0,1,1)
+
+    def dragEnterEvent(self, event):
+        event.accept()
+        '''
+        if e.mimeData().hasText():
+            e.accept()
+        else:
+            e.ignore()
+        '''
+
+    def dropEvent(self, event):
+        self.fileName = str(event.mimeData().urls()[0])[28:-2]
+        self.fileLabel.setText(self.fileName)
+        self.initial_read()
+
+    def file_grab(self):
+        self.fileDialog = QtGui.QWidget()
+        self.fileNameOld = self.fileName
+        try:
+            self.fileName = QtGui.QFileDialog.getOpenFileName(self.fileDialog, 'Open File', '/')[0]
+        except:
+            pass
+        if self.fileName == '':
+            self.fileName = self.fileNameOld
+        elif self.fileName != self.fileNameOld:
+            self.fileLabel.setText(self.fileName)
+            self.isActive = True
+            self.initial_read()
 
     def initial_read(self):
         with open(self.fileName,'r') as self.f:
             for line in self.f:
                 self.header.append(line.strip())
-                if line.strip() == 'Weld Program Listing:' or 'START OF WELD PROGRAM LISTING' in line:
+                if 'Weld Program Listing:' in line or 'START OF WELD PROGRAM LISTING' in line:
                     self.header.pop()
+                    self.openLayout.addWidget(self.headerButton, 0, 3, 1, 1)
+                    self.openLayout.addWidget(self.scheduleButton, 0, 4, 1, 1)
                     self.weld_data_read()
                     break
                 elif 'Sample Rate :' in line:
                     self.header = []
-                    self.samplerate = float(line.split(' ')[3])
+                    self.sampleRate = float(line.split(' ')[3])
                     self.data_recoder_read()
                     break
                     
     def data_recoder_read(self):
+        self.signalDict['None Selected'] = []
+        self.signalDict['Weld Time, sec'] = [0.0]
         for line in self.f:
             if str.isdigit(line[0]) == True or line[0] == '-':
-                break
+                self.signalDict['None Selected'].append(0.0)
+                self.signalDict['Weld Time, sec'].append(self.signalDict['Weld Time, sec'][-1] +
+                                                         1 / self.sampleRate)
+                for i, val in enumerate(line.strip().split(',')):
+                    try:
+                        self.signalDict[self.signalList[i]].append(float(val))
+                    except:
+                        self.signalDict[self.signalList[i]] = [float(val)]
             else:
                 self.signalList.append(line.strip())
-
-        for line in self.f:
-            for i,val in enumerate(line.strip().split(',')):
-                try:
-                    self.signalDict[self.signalList[i]].append(val)
-                except:
-                    self.signalDict[self.signalList[i]] = [val]
-
-        for i,val in enumerate(self.signalList):
+        self.signalDict['Weld Time, sec'].pop()
+        for i,val in enumerate(self.signalDict.keys()):
             self.signalDict[val] = np.asanyarray(self.signalDict[val])
-            
+        self.signalList.insert(0, 'None Selected')
+        self.signalDict['plotTime'] = self.signalDict['Weld Time, sec']
+        if 'Weld Distance, in' in self.signalList:
+            self.signalDict['plotDist'] = self.signalDict['Weld Distance, in']
+        if 'Weld Distance, mm' in self.signalList:
+            self.signalDict['plotDist'] = self.signalDict['Weld Distance, mm']
+        GUI.add_active_files(self.number)
 
     def weld_data_read(self):
         self.f.readline()
@@ -568,27 +734,31 @@ class open_file(QtGui.QWidget):
                 break
             self.schedule.append(line.strip())
 
+        for i in range(len(self.schedule)-1,0,-1):
+            if self.schedule[i].strip() == '':
+                self.schedule.pop()
+            else:
+                break
+
         for line in self.f:
                 if 'Sample Rate :' in line:
-                    self.samplerate = float(line.split(' ')[3])
+                    self.sampleRate = float(line.split(' ')[3])
                     self.data_recoder_read()
                     break
 
-    def file_grab(self):
-        self.fileDialog = QtGui.QWidget()
-        #self.fileDialog.resize(320, 240)
-        self.fileNameOld = self.fileName
+    def deactivate(self):
+        self.isActive = False
+        self.fileName = ''
+        self.offset  = 0.0
+        self.schedule = []
+        self.header = []
+        self.signalDict = {}
+        self.signalList = []
+        self.fileLabel.setText(self.fileName)
+        self.headerButton.setParent(None)
+        self.scheduleButton.setParent(None)
+        GUI.remove_active_files(str(self.number))
 
-        try:
-            self.fileName = QtGui.QFileDialog.getOpenFileName(self.fileDialog, 'Open File', '/')[0]
-        except:
-            pass
-
-        if self.fileName != self.fileNameOld:
-            self.initial_read()
-
-        elif self.fileName == '' and self.fileNameOld != '':
-            self.fileName = self.fileNameOld
 
     def disp_header(self):
         self.headerPanel = QtGui.QWidget()
@@ -605,23 +775,41 @@ class open_file(QtGui.QWidget):
 
     def disp_schedule(self):
         self.schedulePanel = QtGui.QWidget()
+        self.schedulePanel.setMinimumHeight(720)
+        self.schedulePanel.setMinimumWidth(450)
+        self.schedulePanel.setWindowTitle('File ' + str(self.number) + ' Weld Schedule')
         self.schedulePanelLayout = QtGui.QVBoxLayout()
         self.schedulePanel.setLayout(self.schedulePanelLayout)
-        self.schedulePanel.setWindowTitle('File '+str(self.number)+' Weld Schedule')
-
-        self.scheduleListBox = QtGui.QListWidget()
-        #self.scheduleListBox = QtGui.QListView
-
-        for item in self.schedule:
-            self.scheduleListBox.addItem(item)
-
-        self.scheduleListBox.setSelectionMode(QtGui.QAbstractItemView.ExtendedSelection)
-    
-        
-        #self.scheduleListBox = QtGui.QLabel(self.scheduleText)
-        #self.scheduleLabel.setTextInteractionFlags(QtCore.Qt.TextSelectableByMouse)
-        self.schedulePanelLayout.addWidget(self.scheduleListBox)
+        self.schedulePanelButtonsLayout = QtGui.QHBoxLayout()
+        self.schedulePanelListsLayout = QtGui.QHBoxLayout()
+        self.schedulePanelLayout.addLayout(self.schedulePanelButtonsLayout)
+        self.schedulePanelLayout.addLayout(self.schedulePanelListsLayout)
+        self.scheduleCopyButton = QtGui.QPushButton('Copy\nSchedule')
+        self.scheduleCopyButton.setFixedWidth(100)
+        self.scheduleClearButton = QtGui.QPushButton('Clear\nHighlight')
+        self.scheduleClearButton.setFixedWidth(100)
+        self.scheduleListBox = QtGui.QTableWidget()
+        self.scheduleListBox.setRowCount(len(self.schedule))
+        self.scheduleListBox.setColumnCount(1)
+        self.scheduleListBox.setHorizontalHeaderLabels(['WLD Code'])
+        self.scheduleListBox.setColumnWidth(0,400)
+        for i,val in enumerate(self.schedule):
+            self.scheduleListBox.setItem(i,0,QtGui.QTableWidgetItem(str(val)))
+        self.scheduleClearButton.released.connect(self.scheduleListBox.clearSelection)
+        self.scheduleCopyButton.released.connect(lambda: self.copy_to_clipboard(self.schedule))
+        self.schedulePanelButtonsLayout.addWidget(self.scheduleCopyButton)
+        self.schedulePanelButtonsLayout.addWidget(self.scheduleClearButton)
+        self.schedulePanelListsLayout.addWidget(self.scheduleListBox)
         self.schedulePanel.show()
+
+    def copy_to_clipboard(self, item):
+        if type(item) is list:
+            tempstring = ''
+            for val in item:
+                tempstring += val+'\r\n'
+            pyperclip.copy(tempstring[:-1])
+        else:
+            pyperclip.copy(str(item))
 
 class signals(QtGui.QWidget):
     def __init__(self, bgcolor, fgcolor, number):
@@ -630,10 +818,8 @@ class signals(QtGui.QWidget):
         self.fgcolor = fgcolor
         self.number = number
         self.selectList = ['None Selected']
-        self.isActive = False
-        self.activeFile = 1
+        self.isActive = True
         self.activeAxis = 1
-
         if self.number == 0:
             pass
         else:
@@ -643,16 +829,23 @@ class signals(QtGui.QWidget):
     def build_signals(self):
         self.numberButton = QtGui.QPushButton(str(self.number)+':')
         self.signalSelect = QtGui.QComboBox()
+        self.signalSelect.addItems(self.selectList)
+        self.signalSelect.currentIndexChanged.connect(
+            lambda: self.normalize_signal_boxes(self.signalSelect.currentIndex()))
+        self.signalSelect.setMaxVisibleItems(22)
         self.signalValue = QtGui.QLabel()
         self.radio1 = QtGui.QRadioButton()
         self.radio2 = QtGui.QRadioButton()
         self.radio3 = QtGui.QRadioButton()
         self.fileSelect = QtGui.QComboBox()
+        self.fileSelect.currentIndexChanged.connect(self.change_file)
+
 
         self.numberButton.setStyleSheet('background-color: ' + str(self.bgcolor)+';'+
                                         'color: '+ str(self.fgcolor)+';')
-        self.signalValue.setStyleSheet('border:1px solid grey')       
-        
+        self.signalValue.setStyleSheet('border:1px solid grey')
+
+        self.numberButton.released.connect(self.num_butt_toggle)
 
         self.numberButton.setFixedWidth(25)
         self.signalSelect.setFixedWidth(250)
@@ -668,7 +861,9 @@ class signals(QtGui.QWidget):
         self.radio1.setFixedHeight(30) 
         self.radio2.setFixedHeight(30) 
         self.radio3.setFixedHeight(30)
-        self.fileSelect.setFixedHeight(30) 
+        self.fileSelect.setFixedHeight(30)
+
+        self.radio1.setChecked(True)
 
         GUI.signalLayout.addWidget(self.numberButton,self.number+1,0)
         GUI.signalLayout.addWidget(self.signalSelect,self.number+1,1)
@@ -678,10 +873,43 @@ class signals(QtGui.QWidget):
         GUI.signalLayout.addWidget(self.radio3,self.number+1,5)
         GUI.signalLayout.addWidget(self.fileSelect,self.number+1,6)
 
+    def num_butt_toggle(self):
+        if self.isActive == True:
+            self.isActive = False
+            self.numberButton.setStyleSheet('background-color: ' + 'grey' + ';' +
+                                            'color: ' + 'light grey' + ';')
+        else:
+            self.isActive = True
+            self.numberButton.setStyleSheet('background-color: ' + str(self.bgcolor) + ';' +
+                                            'color: ' + str(self.fgcolor) + ';')
+        GUI.replot()
+
+    def change_file(self, index):
+        if self.fileSelect.currentIndex() != index:
+            self.fileSelect.setCurrentIndex(index)
+
+        if self.fileCombo.currentIndex() != index:
+            self.fileCombo.setCurrentIndex(index)
+
+        if self.fileSelect.currentText() != '':
+            self.selectList = openMaster[int(self.fileSelect.currentText())].signalList
+            self.signalCombo.clear()
+            self.signalSelect.clear()
+            self.signalCombo.setParent(None)
+            self.signalSelect.setParent(None)
+            self.signalCombo.addItems(self.selectList)
+            self.signalSelect.addItems(self.selectList)
+            GUI.signalLayout.addWidget(self.signalSelect, self.number + 1, 1)
+            GUI.leftPlotLayout.addWidget(self.signalCombo, 2 * self.number + 1, 0, 1, 4)
+
+
+
     def build_plot(self):
         #self.plotLayout = QtGui.QGridLayout()
         self.activeCheck = QtGui.QCheckBox(str(self.number))
+        self.activeCheck.setChecked(True)
         self.activeCheck.setLayoutDirection(QtCore.Qt.RightToLeft)
+        self.activeCheck.stateChanged.connect(self.num_butt_toggle)
         self.fileCombo = QtGui.QComboBox()
         #self.fileCombo.setAlignment(QtCore.Qt.AlignHCenter | QtCore.Qt.AlignVCenter)
         #self.fileCombo.setStyleSheet('background-color: ' + str(self.bgcolor)+';'+'color: '+ str(self.fgcolor)+';')
@@ -689,6 +917,9 @@ class signals(QtGui.QWidget):
         #self.axisCombo.setAlignment(QtCore.Qt.AlignHCenter | QtCore.Qt.AlignVCenter)
         #self.axisCombo.setStyleSheet('background-color: ' + str(self.bgcolor)+';'+'color: '+ str(self.fgcolor)+';')
         self.signalCombo = QtGui.QComboBox()
+        self.signalCombo.addItems(self.selectList)
+        self.signalCombo.currentIndexChanged.connect(
+            lambda: self.normalize_signal_boxes(self.signalCombo.currentIndex()))
         #self.signalCombo.setAlignment(QtCore.Qt.AlignHCenter | QtCore.Qt.AlignVCenter)
         self.signalCombo.setStyleSheet('background-color: ' + str(self.bgcolor)+';'+
                                        'color: '+ str(self.fgcolor)+';')
@@ -716,13 +947,22 @@ class signals(QtGui.QWidget):
         GUI.leftPlotLayout.addWidget(self.plotLabel,2*self.number,3)
         GUI.leftPlotLayout.addWidget(self.signalCombo,2*self.number+1,0,1,4)
 
-        
+    def normalize_signal_boxes(self,index):
+        if self.signalSelect.currentIndex() != index:
+            self.signalSelect.setCurrentIndex(index)
+
+        if self.signalCombo.currentIndex() != index:
+            self.signalCombo.setCurrentIndex(index)
+
+        if GUI.tabWidget.currentIndex() == 2:
+            GUI.replot()
 
 
 
 app = QtGui.QApplication(sys.argv)
 theme = QtGui.QApplication.setStyle('Plastique')
 GUI = Window()
+
 
 open1 = open_file(1)
 open2 = open_file(2)
