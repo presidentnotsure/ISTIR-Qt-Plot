@@ -2,6 +2,8 @@ import sys
 from PySide import QtGui, QtCore
 import numpy as np
 import pyperclip
+from matplotlib.figure import Figure
+from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 
 class Window(QtGui.QWidget):
     def __init__(self):
@@ -13,14 +15,16 @@ class Window(QtGui.QWidget):
         self.windowLayout = QtGui.QGridLayout(self)
         self.windowLayout.setContentsMargins(5,5,5,5)
         self.setLayout(self.windowLayout)
-
         self.tabWidget = QtGui.QTabWidget(self)
+
+
+        self.anyOpen = False
         self.open_tab()
         self.setup_tab()
         self.plot_tab()
         self.about_tab()
 
-        self.tabWidget.currentChanged.connect(self.replot)
+        #self.tabWidget.currentChanged.connect(plotFrame.build_plot)
         self.fileActiveList = []
 
         self.signals_header()
@@ -30,6 +34,11 @@ class Window(QtGui.QWidget):
         self.left_plot()
         self.horiz_plot()
         self.print_screen()
+
+
+
+
+
 
 
         self.windowLayout.addWidget(self.tabWidget)
@@ -62,7 +71,7 @@ class Window(QtGui.QWidget):
         self.axesLayout = QtGui.QGridLayout()
         self.axesLayout.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignTop)
         self.axesLayout.setContentsMargins(1,1,1,1)
-        self.setupTabLayout.addLayout(self.axesLayout,0,1)        
+        self.setupTabLayout.addLayout(self.axesLayout,0,1)
 
         #setup Copy area of tab
         self.copyLayout = QtGui.QHBoxLayout()
@@ -87,7 +96,7 @@ class Window(QtGui.QWidget):
         self.dosLabel = QtGui.QLabel(' 2')
         self.tresLabel = QtGui.QLabel(' 3')
         self.fileLabel = QtGui.QLabel('File')
-   
+
         self.chooseLabel.setAlignment(QtCore.Qt.AlignHCenter | QtCore.Qt.AlignVCenter)
         self.valueLabel.setAlignment(QtCore.Qt.AlignHCenter | QtCore.Qt.AlignVCenter)
         self.vertLabel.setAlignment(QtCore.Qt.AlignHCenter | QtCore.Qt.AlignVCenter)
@@ -95,7 +104,7 @@ class Window(QtGui.QWidget):
         self.dosLabel.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
         self.tresLabel.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
         self.fileLabel.setAlignment(QtCore.Qt.AlignHCenter | QtCore.Qt.AlignVCenter)
-        
+
         self.signalLayout.addWidget(self.chooseLabel,0,1,2,1)
         self.signalLayout.addWidget(self.valueLabel,0,2,2,1)
         self.signalLayout.addWidget(self.vertLabel,0,3,1,3)
@@ -124,23 +133,23 @@ class Window(QtGui.QWidget):
         self.vertDosLabel = QtGui.QLabel('2:')
         self.vertTresLabel = QtGui.QLabel('3:')
         self.vertUnoLowerButton = QtGui.QPushButton('◄')
+        self.vertUnoLowerButton.released.connect(lambda: self.vert_lower_auto_set(1))
         self.vertDosLowerButton = QtGui.QPushButton('◄')
+        self.vertDosLowerButton.released.connect(lambda: self.vert_lower_auto_set(2))
         self.vertTresLowerButton = QtGui.QPushButton('◄')
+        self.vertTresLowerButton.released.connect(lambda: self.vert_lower_auto_set(3))
         self.vertUnoLowerEntry = QtGui.QLineEdit(str(self.vertUnoLowerVal))
         self.vertDosLowerEntry = QtGui.QLineEdit(str(self.vertDosLowerVal))
         self.vertTresLowerEntry = QtGui.QLineEdit(str(self.vertTresLowerVal))
         self.vertUnoUpperEntry = QtGui.QLineEdit(str(self.vertUnoUpperVal))
         self.vertDosUpperEntry = QtGui.QLineEdit(str(self.vertDosUpperVal))
         self.vertTresUpperEntry = QtGui.QLineEdit(str(self.vertTresUpperVal))
-        #self.vertUnoLowerEntry.textChanged.connect()
-        #self.vertDosLowerEntry.textChanged.connect()
-        #self.vertTresLowerEntry.textChanged.connect()
-        #self.vertUnoUpperEntry.textChanged.connect()
-        #self.vertDosUpperEntry.textChanged.connect()
-        #self.vertTresUpperEntry.textChanged.connect()
         self.vertUnoUpperButton = QtGui.QPushButton('►')
+        self.vertUnoUpperButton.released.connect(lambda: self.vert_upper_auto_set(1))
         self.vertDosUpperButton = QtGui.QPushButton('►')
+        self.vertDosUpperButton.released.connect(lambda: self.vert_upper_auto_set(2))
         self.vertTresUpperButton = QtGui.QPushButton('►')
+        self.vertTresUpperButton.released.connect(lambda: self.vert_upper_auto_set(3))
         self.vertSpace = QtGui.QLabel()
 
         self.vertLabel.setAlignment(QtCore.Qt.AlignHCenter | QtCore.Qt.AlignVCenter)
@@ -198,9 +207,11 @@ class Window(QtGui.QWidget):
         self.horizLowerLabel = QtGui.QLabel('Lower')
         self.horizUpperLabel = QtGui.QLabel('Upper')
         self.horizLowerButton = QtGui.QPushButton('◄')
+        self.horizLowerButton.released.connect(self.horiz_lower_auto_set)
         self.horizLowerEntry = QtGui.QLineEdit(str(self.horizLowerVal))
         self.horizUpperEntry = QtGui.QLineEdit(str(self.horizUpperVal))
         self.horizUpperButton = QtGui.QPushButton('►')
+        self.horizUpperButton.released.connect(self.horiz_upper_auto_set)
         self.horizSpace = QtGui.QLabel()
 
         self.horizLabel.setAlignment(QtCore.Qt.AlignHCenter | QtCore.Qt.AlignVCenter)
@@ -279,10 +290,10 @@ class Window(QtGui.QWidget):
         self.toLabel = QtGui.QLabel('to File')
         self.secondBox = QtGui.QComboBox()
         self.copySpacer = QtGui.QLabel()
-        
+
         self.copyLayout.addWidget(self.mainButton)
         self.copyLayout.addWidget(self.fromLabel)
-        self.copyLayout.addWidget(self.firstBox)                     
+        self.copyLayout.addWidget(self.firstBox)
         self.copyLayout.addWidget(self.toLabel)
         self.copyLayout.addWidget(self.secondBox)
         self.copyLayout.addWidget(self.copySpacer)
@@ -383,13 +394,13 @@ class Window(QtGui.QWidget):
 
 
         #setup right plot area
-        self.rightPlotLayout = QtGui.QVBoxLayout()
+        self.rightPlotLayout = QtGui.QGridLayout()
         self.plotTabLayout.addLayout(self.rightPlotLayout,0,1)
-        self.plotHolder = QtGui.QLineEdit()
+        #self.plotHolder = QtGui.QLineEdit()
         #self.plotHolder.setFixedWidth(700)
         #self.plotHolder.setFixedHeight(700)
-        self.rightPlotLayout.addWidget(self.plotHolder)
-        
+        #self.rightPlotLayout.addWidget(self.plotHolder)
+
 
         #setup horizontal axis area
         self.bottomLPlotLayout = QtGui.QHBoxLayout()
@@ -399,9 +410,9 @@ class Window(QtGui.QWidget):
         self.bottomCPlotLayout = QtGui.QHBoxLayout()
         self.plotTabLayout.addLayout(self.bottomCPlotLayout,1,1)
         self.bottomCPlotLayout.setAlignment(QtCore.Qt.AlignHCenter | QtCore.Qt.AlignVCenter)
-        
 
-        
+
+
         self.tabWidget.addTab(self.plotTab, "Plot")
 
     def print_screen(self):
@@ -412,7 +423,7 @@ class Window(QtGui.QWidget):
         self.prntScrnLayout.addWidget(self.saveScrnButton)
         self.prntScrnLayout.setAlignment(QtCore.Qt.AlignHCenter | QtCore.Qt.AlignTop)
         self.leftPlotLayout.addLayout(self.prntScrnLayout,22,0,1,4)
-        
+
     def left_plot(self):
         self.plotActiveLabel = QtGui.QLabel('Plot?')
         self.plotActiveLabel.setFixedHeight(25)
@@ -467,7 +478,7 @@ class Window(QtGui.QWidget):
         self.bottomLPlotLayout.addWidget(self.highlightHiValLabel)
         self.bottomCPlotLayout.addWidget(self.xValLabel)
         self.bottomCPlotLayout.addWidget(self.xUnitLabel)
-        
+
     def about_tab(self):
         self.aboutTab = QtGui.QWidget()
         self.aboutTab.setLayout(QtGui.QHBoxLayout())
@@ -475,10 +486,6 @@ class Window(QtGui.QWidget):
         self.aboutLabel.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignTop)
         self.aboutTab.layout().addWidget(self.aboutLabel)
         self.tabWidget.addTab(self.aboutTab, "About")
-
-    def replot(self):
-        if self.tabWidget.currentIndex() == 2:
-            pass
 
     def add_active_files(self, input):
         if str(input) not in self.fileActiveList:
@@ -530,18 +537,49 @@ class Window(QtGui.QWidget):
             self.bottomRadio.setParent(None)
             self.topRadio.setChecked(True)
 
-    def vert_lower_auto_set(self, input):
-        minlist = maxlist = []
+    def horiz_lower_auto_set(self):
+        minlist = []
         if self.bottomRadio.isChecked() == True:
             for i,val in enumerate(openMaster):
                 if isinstance(val, str) == False:
                     minlist.append(min(val.signalDict['plotDist']))
-                    maxlist.append(max(val.signalDict['plotDist']))
         else:
             for i,val in enumerate(openMaster):
                 if isinstance(val, str) == False:
                     minlist.append(min(val.signalDict['plotTime']))
+
+            self.horizLowerEntry.setText(str(min(minlist)))
+
+    def horiz_upper_auto_set(self):
+        maxlist = []
+        if self.bottomRadio.isChecked() == True:
+            for i,val in enumerate(openMaster):
+                if isinstance(val, str) == False:
+                    maxlist.append(max(val.signalDict['plotDist']))
+        else:
+            for i,val in enumerate(openMaster):
+                if isinstance(val, str) == False:
                     maxlist.append(max(val.signalDict['plotTime']))
+            self.horizUpperEntry.setText(str(max(maxlist)))
+        if float(self.horizUpperEntry.text()) <= float(self.horizLowerEntry.text()):
+            self.horizUpperEntry.setText(str(float(self.horizLowerEntry.text()) + 1))
+
+    def vert_lower_auto_set(self, input):
+        minlist = []
+        for item in signalsMaster:
+            if isinstance(item, str) == False:
+                if item.fileSelect.currentText() != '':
+                    file = int(item.fileSelect.currentText())
+                    signal = item.signalSelect.currentText()
+                    if item.radio1.isChecked() == True and input == 1:
+                        minlist.append(min(openMaster[file][signal]))
+                    elif item.radio2.isChecked() == True and input == 2:
+                        minlist.append(min(openMaster[file][signal]))
+                    elif item.radio3.isChecked() == True and input == 3:
+                        minlist.append(min(openMaster[file][signal]))
+
+        if minlist  == []:
+            minlist = [0]
 
         if input == 1:
             self.vertUnoLowerEntry.setText(str(min(minlist)))
@@ -549,28 +587,118 @@ class Window(QtGui.QWidget):
             self.vertDosLowerEntry.setText(str(min(minlist)))
         elif input == 3:
             self.vertTresLowerEntry.setText(str(min(minlist)))
-        else:
-            pass
 
+    def vert_upper_auto_set(self, input):
+        maxlist = []
+        for item in signalsMaster:
+            if isinstance(item,str) == False:
+                if item.fileSelect.currentText() != '':
+                    file = int(item.fileSelect.currentText())
+                    signal = item.signalSelect.currentText()
+                    if item.radio1.isChecked() == True and input == 1:
+                        maxlist.append(max(openMaster[file][signal]))
+                    elif item.radio2.isChecked() == True and input == 2:
+                        minlist.append(min(openMaster[file][signal]))
+                    elif item.radio3.isChecked() == True and input == 3:
+                        minlist.append(min(openMaster[file][signal]))
 
+        if maxlist == []:
+            maxlist = [1]
 
+        if input == 1:
+            self.vertUnoLowerEntry.setText(str(max(maxlist)))
+        elif input == 2:
+            self.vertDosLowerEntry.setText(str(max(maxlist)))
+        elif input == 3:
+            self.vertTresLowerEntry.setText(str(max(maxlist)))
 
-
-
-        #1st input = upper/lower/both
-        #2nd input = axis number/all axes
-        max1 = max2 = max3 = newmax = 0.001
-        min1 = min2 = min3 = newmin = 0.0
-
-
-            for i, val in enumerate(signalsMaster):
-                if isinstance(val, str) == False
-                    val.
-
-        if input[1] == 1 or input[1] == '1'
-
-
-
+    def build_plot(self):
+        if self.tabWidget.currentIndex() == 2:
+            for val in openMaster:
+                if isinstance(val, str) == False:
+                    self.ax = self.figure.add_subplot(111, autoscale_on=True)
+                    if val.fileName != '':
+                        self.axUnoActive = False
+                        self.axDosActive = False
+                        self.axTresActive = False
+                        for item in signalsMaster:
+                            if isinstance(item, str) == False:
+                                if item.radio1.isChecked() == True:
+                                    self.axUnoActive = True
+                                elif item.radio2.isChecked() == True:
+                                    self.axDosActive = True
+                                elif item.radio3.isChecked() == True:
+                                    self.axTresActive = True
+                            if self.axUnoActive == True and self.axDosActive == True and self.axTresActive == True:
+                                break
+                        if self.vertAutoCheck.isChecked() == True:
+                            if self.axUnoActive == True:
+                                self.vert_upper_auto_set(1)
+                                self.vert_lower_auto_set(1)
+                            if self.axDosActive == True:
+                                self.vert_upper_auto_set(2)
+                                self.vert_lower_auto_set(2)
+                            if self.axTresActive == True:
+                                self.vert_upper_auto_set(3)
+                                self.vert_lower_auto_set(3)
+                        if self.horizAutoCheck.isChecked() == True:
+                            self.horiz_lower_auto_set()
+                            self.horiz_upper_auto_set()
+                        self.ax.set_xlim(float(self.horizLowerEntry.text()),float(self.horizUpperEntry.text()))
+                        self.ax.set_ylim(float(self.vertUnoLowerEntry.text()),float(self.vertUnoUpperEntry.text()))
+                        if self.axDosActive == True:
+                            self.ax2 = self.ax.twinx()
+                            self.ax.set_ylim(float(self.vertDosLowerEntry.text()), float(self.vertDosUpperEntry.text()))
+                        if self.axTresActive == True:
+                            self.ax3 = self.ax.twinx()
+                            self.ax3.set_ylim(float(self.vertTresLowerEntry.text()), float(self.vertTresUpperEntry.text()))
+                            self.ax3.spines["right"].set_position(('axes', 1.1))
+                        for item in signalsMaster:
+                            if isinstance(item, str) == False:
+                                if item.signalSelect.currentText() != 'None Selected' and item.numberButton.isActive == True:
+                                    if item.radio1.isChecked() == True:
+                                        if self.bottomRadio.isChecked() == True:
+                                            self.ax.plot(
+                                                openMaster[int(item.fileSelect.currentText())].signalDict['plotDist'],
+                                                openMaster[int(item.fileSelect.currentText())].signalDict[
+                                                item.signalSelect.currentText()],
+                                                color=item.bgcolor)
+                                        else:
+                                            self.ax.plot(
+                                                openMaster[int(item.fileSelect.currentText())].signalDict['plotTime'],
+                                                openMaster[int(item.fileSelect.currentText())].signalDict[
+                                                    item.signalSelect.currentText()],
+                                                color=item.bgcolor)
+                                    elif item.radio2.isChecked() == True:
+                                        if self.bottomRadio.isChecked() == True:
+                                            self.ax2.plot(
+                                                openMaster[int(item.fileSelect.currentText())].signalDict['plotDist'],
+                                                openMaster[int(item.fileSelect.currentText())].signalDict[
+                                                    item.signalSelect.currentText()],
+                                                color=item.bgcolor)
+                                        else:
+                                            self.ax2.plot(
+                                                openMaster[int(item.fileSelect.currentText())].signalDict['plotTime'],
+                                                openMaster[int(item.fileSelect.currentText())].signalDict[
+                                                    item.signalSelect.currentText()],
+                                                color=item.bgcolor)
+                                    elif item.radio3.isChecked() == True:
+                                        if self.bottomRadio.isChecked() == True:
+                                            self.ax3.plot(
+                                                openMaster[int(item.fileSelect.currentText())].signalDict['plotDist'],
+                                                openMaster[int(item.fileSelect.currentText())].signalDict[
+                                                item.signalSelect.currentText()],
+                                                color=item.bgcolor)
+                                        else:
+                                            self.ax3.plot(
+                                                openMaster[int(item.fileSelect.currentText())].signalDict['plotTime'],
+                                                openMaster[int(item.fileSelect.currentText())].signalDict[
+                                                    item.signalSelect.currentText()],
+                                                color=item.bgcolor)
+                        break
+            self.ax.axhline(y=0, xmin=-10, xmax=10, c='black')
+            self.canvas.draw()
+            self.rightPlotLayout.addWidget(self.canvas)
 
 class open_file(QtGui.QFrame):
     def __init__(self,number):
@@ -595,7 +723,7 @@ class open_file(QtGui.QFrame):
         self.build_gui()
 
 
-        
+
         GUI.openTabLayout.addWidget(self,self.openRow,self.openCol)
 
     def set_tab_pos(self):
@@ -604,7 +732,7 @@ class open_file(QtGui.QFrame):
             self.openCol = 0
         else:
             self.openRow = self.number - 6
-            self.openCol = 1 
+            self.openCol = 1
 
     def build_gui(self):
         self.setLayout(QtGui.QGridLayout())
@@ -700,7 +828,7 @@ class open_file(QtGui.QFrame):
                     self.sampleRate = float(line.split(' ')[3])
                     self.data_recoder_read()
                     break
-                    
+
     def data_recoder_read(self):
         self.signalDict['None Selected'] = []
         self.signalDict['Weld Time, sec'] = [0.0]
@@ -813,7 +941,7 @@ class open_file(QtGui.QFrame):
 
 class signals(QtGui.QWidget):
     def __init__(self, bgcolor, fgcolor, number):
-        super(signals, self).__init__()       
+        super(signals, self).__init__()
         self.bgcolor = bgcolor
         self.fgcolor = fgcolor
         self.number = number
@@ -855,11 +983,11 @@ class signals(QtGui.QWidget):
         self.radio3.setFixedWidth(20)
         self.fileSelect.setFixedWidth(40)
 
-        self.numberButton.setFixedHeight(30) 
+        self.numberButton.setFixedHeight(30)
         self.signalSelect.setFixedHeight(30)
-        self.signalValue.setFixedHeight(30) 
-        self.radio1.setFixedHeight(30) 
-        self.radio2.setFixedHeight(30) 
+        self.signalValue.setFixedHeight(30)
+        self.radio1.setFixedHeight(30)
+        self.radio2.setFixedHeight(30)
         self.radio3.setFixedHeight(30)
         self.fileSelect.setFixedHeight(30)
 
@@ -927,7 +1055,7 @@ class signals(QtGui.QWidget):
         #self.plotLabel.setAlignment(QtCore.Qt.AlignHCenter | QtCore.Qt.AlignVCenter)
         #self.plotLabel.setStyleSheet('background-color: ' + str(self.bgcolor)+';'+'color: '+ str(self.fgcolor)+';')
         self.plotLabel.setStyleSheet('border:1px solid grey')
-        
+
         self.activeCheck.setFixedWidth(30)
         self.fileCombo.setFixedWidth(40)
         self.axisCombo.setFixedWidth(40)
@@ -957,7 +1085,102 @@ class signals(QtGui.QWidget):
         if GUI.tabWidget.currentIndex() == 2:
             GUI.replot()
 
+class MatplotlibWidget(FigureCanvas):
+    def __init__(self, parent=None):
+        super(MatplotlibWidget, self).__init__(Figure())
+        self.figure = Figure(tight_layout=True)
+        self.canvas = FigureCanvas(self.figure)
 
+
+    def build_plot(self):
+        global GUI
+        type(GUI)
+        if GUI.tabWidget.currentIndex() == 2:
+            for val in openMaster:
+                if isinstance(val, str) == False:
+                    self.ax = self.figure.add_subplot(111, autoscale_on=True)
+                    if val.fileName != '':
+                        self.axUnoActive = False
+                        self.axDosActive = False
+                        self.axTresActive = False
+                        for item in signalsMaster:
+                            if isinstance(item, str) == False:
+                                if item.radio1.isChecked() == True:
+                                    self.axUnoActive = True
+                                elif item.radio2.isChecked() == True:
+                                    self.axDosActive = True
+                                elif item.radio3.isChecked() == True:
+                                    self.axTresActive = True
+                            if self.axUnoActive == True and self.axDosActive == True and self.axTresActive == True:
+                                break
+                        if GUI.vertAutoCheck.isChecked() == True:
+                            if self.axUnoActive == True:
+                                GUI.vert_upper_auto_set(1)
+                                GUI.vert_lower_auto_set(1)
+                            if self.axDosActive == True:
+                                GUI.vert_upper_auto_set(2)
+                                GUI.vert_lower_auto_set(2)
+                            if self.axTresActive == True:
+                                GUI.vert_upper_auto_set(3)
+                                GUI.vert_lower_auto_set(3)
+                        if self.horizAutoCheck.isChecked() == True:
+                            GUI.horiz_lower_auto_set()
+                            GUI.horiz_upper_auto_set()
+                        self.ax.set_xlim(float(self.horizLowerEntry.text()),float(self.horizUpperEntry.text()))
+                        self.ax.set_ylim(float(self.vertUnoLowerEntry.text()),float(self.vertUnoUpperEntry.text()))
+                        if self.axDosActive == True:
+                            self.ax2 = self.ax.twinx()
+                            self.ax.set_ylim(float(self.vertDosLowerEntry.text()), float(self.vertDosUpperEntry.text()))
+                        if self.axTresActive == True:
+                            self.ax3 = self.ax.twinx()
+                            self.ax3.set_ylim(float(self.vertTresLowerEntry.text()), float(self.vertTresUpperEntry.text()))
+                            self.ax3.spines["right"].set_position(('axes', 1.1))
+                        for item in signalsMaster:
+                            if isinstance(item, str) == False:
+                                if item.signalSelect.currentText() != 'None Selected' and item.numberButton.isActive == True:
+                                    if item.radio1.isChecked() == True:
+                                        if self.bottomRadio.isChecked() == True:
+                                            self.ax.plot(
+                                                openMaster[int(item.fileSelect.currentText())].signalDict['plotDist'],
+                                                openMaster[int(item.fileSelect.currentText())].signalDict[
+                                                item.signalSelect.currentText()],
+                                                color=item.bgcolor)
+                                        else:
+                                            self.ax.plot(
+                                                openMaster[int(item.fileSelect.currentText())].signalDict['plotTime'],
+                                                openMaster[int(item.fileSelect.currentText())].signalDict[
+                                                    item.signalSelect.currentText()],
+                                                color=item.bgcolor)
+                                    elif item.radio2.isChecked() == True:
+                                        if self.bottomRadio.isChecked() == True:
+                                            self.ax2.plot(
+                                                openMaster[int(item.fileSelect.currentText())].signalDict['plotDist'],
+                                                openMaster[int(item.fileSelect.currentText())].signalDict[
+                                                    item.signalSelect.currentText()],
+                                                color=item.bgcolor)
+                                        else:
+                                            self.ax2.plot(
+                                                openMaster[int(item.fileSelect.currentText())].signalDict['plotTime'],
+                                                openMaster[int(item.fileSelect.currentText())].signalDict[
+                                                    item.signalSelect.currentText()],
+                                                color=item.bgcolor)
+                                    elif item.radio3.isChecked() == True:
+                                        if GUI.bottomRadio.isChecked() == True:
+                                            self.ax3.plot(
+                                                openMaster[int(item.fileSelect.currentText())].signalDict['plotDist'],
+                                                openMaster[int(item.fileSelect.currentText())].signalDict[
+                                                item.signalSelect.currentText()],
+                                                color=item.bgcolor)
+                                        else:
+                                            self.ax3.plot(
+                                                openMaster[int(item.fileSelect.currentText())].signalDict['plotTime'],
+                                                openMaster[int(item.fileSelect.currentText())].signalDict[
+                                                    item.signalSelect.currentText()],
+                                                color=item.bgcolor)
+                        break
+            self.ax.axhline(y=0, xmin=-10, xmax=10, c='black')
+            self.canvas.draw()
+            GUI.rightPlotLayout.addWidget(self.canvas)
 
 app = QtGui.QApplication(sys.argv)
 theme = QtGui.QApplication.setStyle('Plastique')
@@ -987,5 +1210,9 @@ signals8 = signals('#BF3EFF', 'black',  8)
 signals9 = signals('#7FFF00', 'black',  9)
 signals10 = signals('#FFA500', 'black', 10)
 signalsMaster = ['signalHeader', signals1, signals2, signals3, signals4, signals5, signals6, signals7, signals8, signals9, signals10]
+
+plotFrame = MatplotlibWidget()
+plotFrame.build_plot()
+GUI.tabWidget.currentChanged.connect(plotFrame.build_plot)
 
 sys.exit(app.exec_())
