@@ -2,6 +2,7 @@ import sys
 from PySide import QtGui, QtCore
 import numpy as np
 import pyperclip
+import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 
@@ -541,11 +542,11 @@ class Window(QtGui.QWidget):
         minlist = []
         if self.bottomRadio.isChecked() == True:
             for i,val in enumerate(openMaster):
-                if isinstance(val, str) == False:
+                if isinstance(val, str) == False and val.fileName != '':
                     minlist.append(min(val.signalDict['plotDist']))
         else:
             for i,val in enumerate(openMaster):
-                if isinstance(val, str) == False:
+                if isinstance(val, str) == False and val.fileName != '':
                     minlist.append(min(val.signalDict['plotTime']))
 
             self.horizLowerEntry.setText(str(min(minlist)))
@@ -554,11 +555,11 @@ class Window(QtGui.QWidget):
         maxlist = []
         if self.bottomRadio.isChecked() == True:
             for i,val in enumerate(openMaster):
-                if isinstance(val, str) == False:
+                if isinstance(val, str) == False and val.fileName != '':
                     maxlist.append(max(val.signalDict['plotDist']))
         else:
             for i,val in enumerate(openMaster):
-                if isinstance(val, str) == False:
+                if isinstance(val, str) == False and val.fileName != '':
                     maxlist.append(max(val.signalDict['plotTime']))
             self.horizUpperEntry.setText(str(max(maxlist)))
         if float(self.horizUpperEntry.text()) <= float(self.horizLowerEntry.text()):
@@ -572,11 +573,11 @@ class Window(QtGui.QWidget):
                     file = int(item.fileSelect.currentText())
                     signal = item.signalSelect.currentText()
                     if item.radio1.isChecked() == True and input == 1:
-                        minlist.append(min(openMaster[file][signal]))
+                        minlist.append(min(openMaster[file].signalDict[signal]))
                     elif item.radio2.isChecked() == True and input == 2:
-                        minlist.append(min(openMaster[file][signal]))
+                        minlist.append(min(openMaster[file].signalDict[signal]))
                     elif item.radio3.isChecked() == True and input == 3:
-                        minlist.append(min(openMaster[file][signal]))
+                        minlist.append(min(openMaster[file].signalDict[signal]))
 
         if minlist  == []:
             minlist = [0]
@@ -596,21 +597,21 @@ class Window(QtGui.QWidget):
                     file = int(item.fileSelect.currentText())
                     signal = item.signalSelect.currentText()
                     if item.radio1.isChecked() == True and input == 1:
-                        maxlist.append(max(openMaster[file][signal]))
+                        maxlist.append(max(openMaster[file].signalDict[signal]))
                     elif item.radio2.isChecked() == True and input == 2:
-                        minlist.append(min(openMaster[file][signal]))
+                        minlist.append(min(openMaster[file].signalDict[signal]))
                     elif item.radio3.isChecked() == True and input == 3:
-                        minlist.append(min(openMaster[file][signal]))
+                        minlist.append(min(openMaster[file].signalDict[signal]))
 
         if maxlist == []:
             maxlist = [1]
 
         if input == 1:
-            self.vertUnoLowerEntry.setText(str(max(maxlist)))
+            self.vertUnoUpperEntry.setText(str(max(maxlist)))
         elif input == 2:
-            self.vertDosLowerEntry.setText(str(max(maxlist)))
+            self.vertDosUpperEntry.setText(str(max(maxlist)))
         elif input == 3:
-            self.vertTresLowerEntry.setText(str(max(maxlist)))
+            self.vertTresUpperEntry.setText(str(max(maxlist)))
 
     def build_plot(self):
         if self.tabWidget.currentIndex() == 2:
@@ -831,12 +832,10 @@ class open_file(QtGui.QFrame):
 
     def data_recoder_read(self):
         self.signalDict['None Selected'] = []
-        self.signalDict['Weld Time, sec'] = [0.0]
+
         for line in self.f:
             if str.isdigit(line[0]) == True or line[0] == '-':
                 self.signalDict['None Selected'].append(0.0)
-                self.signalDict['Weld Time, sec'].append(self.signalDict['Weld Time, sec'][-1] +
-                                                         1 / self.sampleRate)
                 for i, val in enumerate(line.strip().split(',')):
                     try:
                         self.signalDict[self.signalList[i]].append(float(val))
@@ -844,7 +843,9 @@ class open_file(QtGui.QFrame):
                         self.signalDict[self.signalList[i]] = [float(val)]
             else:
                 self.signalList.append(line.strip())
-        self.signalDict['Weld Time, sec'].pop()
+        self.signalDict['Weld Time, sec'] = []
+        for i,val in enumerate(self.signalDict['None Selected']):
+            self.signalDict['Weld Time, sec'].append(float(i)/self.sampleRate)
         for i,val in enumerate(self.signalDict.keys()):
             self.signalDict[val] = np.asanyarray(self.signalDict[val])
         self.signalList.insert(0, 'None Selected')
@@ -853,6 +854,11 @@ class open_file(QtGui.QFrame):
             self.signalDict['plotDist'] = self.signalDict['Weld Distance, in']
         if 'Weld Distance, mm' in self.signalList:
             self.signalDict['plotDist'] = self.signalDict['Weld Distance, mm']
+
+        print(len(self.signalDict['plotTime']))
+        print(len(self.signalDict['Weld Time, sec']))
+        print(len(self.signalDict['None Selected']))
+        print(len(self.signalDict[self.signalList[12]]))
         GUI.add_active_files(self.number)
 
     def weld_data_read(self):
@@ -952,7 +958,7 @@ class signals(QtGui.QWidget):
             pass
         else:
             self.build_signals()
-            self.build_plot()
+            self.build_plot_items()
 
     def build_signals(self):
         self.numberButton = QtGui.QPushButton(str(self.number)+':')
@@ -965,6 +971,13 @@ class signals(QtGui.QWidget):
         self.radio1 = QtGui.QRadioButton()
         self.radio2 = QtGui.QRadioButton()
         self.radio3 = QtGui.QRadioButton()
+        self.radioGroup =QtGui.QButtonGroup()
+        self.radioGroup.addButton(self.radio1,1)
+        self.radioGroup.addButton(self.radio2,2)
+        self.radioGroup.addButton(self.radio3,3)
+        self.radio1.released.connect(lambda: self.normalize_axes(1))
+        self.radio2.released.connect(lambda: self.normalize_axes(2))
+        self.radio3.released.connect(lambda: self.normalize_axes(3))
         self.fileSelect = QtGui.QComboBox()
         self.fileSelect.currentIndexChanged.connect(self.change_file)
 
@@ -1010,7 +1023,7 @@ class signals(QtGui.QWidget):
             self.isActive = True
             self.numberButton.setStyleSheet('background-color: ' + str(self.bgcolor) + ';' +
                                             'color: ' + str(self.fgcolor) + ';')
-        GUI.replot()
+            plotFrame.build_plot()
 
     def change_file(self, index):
         if self.fileSelect.currentIndex() != index:
@@ -1030,20 +1043,16 @@ class signals(QtGui.QWidget):
             GUI.signalLayout.addWidget(self.signalSelect, self.number + 1, 1)
             GUI.leftPlotLayout.addWidget(self.signalCombo, 2 * self.number + 1, 0, 1, 4)
 
-
-
-    def build_plot(self):
+    def build_plot_items(self):
         #self.plotLayout = QtGui.QGridLayout()
         self.activeCheck = QtGui.QCheckBox(str(self.number))
         self.activeCheck.setChecked(True)
         self.activeCheck.setLayoutDirection(QtCore.Qt.RightToLeft)
         self.activeCheck.stateChanged.connect(self.num_butt_toggle)
         self.fileCombo = QtGui.QComboBox()
-        #self.fileCombo.setAlignment(QtCore.Qt.AlignHCenter | QtCore.Qt.AlignVCenter)
-        #self.fileCombo.setStyleSheet('background-color: ' + str(self.bgcolor)+';'+'color: '+ str(self.fgcolor)+';')
         self.axisCombo = QtGui.QComboBox()
-        #self.axisCombo.setAlignment(QtCore.Qt.AlignHCenter | QtCore.Qt.AlignVCenter)
-        #self.axisCombo.setStyleSheet('background-color: ' + str(self.bgcolor)+';'+'color: '+ str(self.fgcolor)+';')
+        self.axisCombo.addItems(['1','2','3'])
+        self.axisCombo.currentIndexChanged.connect(lambda: self.normalize_axes(self.axisCombo.currentText()))
         self.signalCombo = QtGui.QComboBox()
         self.signalCombo.addItems(self.selectList)
         self.signalCombo.currentIndexChanged.connect(
@@ -1082,19 +1091,32 @@ class signals(QtGui.QWidget):
         if self.signalCombo.currentIndex() != index:
             self.signalCombo.setCurrentIndex(index)
 
-        if GUI.tabWidget.currentIndex() == 2:
-            GUI.replot()
+        plotFrame.build_plot()
+
+    def normalize_axes(self, index):
+        if self.radioGroup.checkedId() != index:
+            if index == '1':
+                self.radio1.setChecked(True)
+            elif index == '2':
+                self.radio2.setChecked(True)
+            elif index == '3':
+                self.radio3.setChecked(True)
+
+        if self.axisCombo.currentText() != index:
+            self.axisCombo.setCurrentIndex(index-1)
+
+        plotFrame.build_plot()
 
 class MatplotlibWidget(FigureCanvas):
     def __init__(self, parent=None):
         super(MatplotlibWidget, self).__init__(Figure())
-        self.figure = Figure(tight_layout=True)
+        self.figure = plt.figure(tight_layout=True, dpi = 300, linewidth = 2)
+        plt.rc('font', size=3)
+        #https://matplotlib.org/users/customizing.html
         self.canvas = FigureCanvas(self.figure)
 
 
     def build_plot(self):
-        global GUI
-        type(GUI)
         if GUI.tabWidget.currentIndex() == 2:
             for val in openMaster:
                 if isinstance(val, str) == False:
@@ -1123,23 +1145,23 @@ class MatplotlibWidget(FigureCanvas):
                             if self.axTresActive == True:
                                 GUI.vert_upper_auto_set(3)
                                 GUI.vert_lower_auto_set(3)
-                        if self.horizAutoCheck.isChecked() == True:
+                        if GUI.horizAutoCheck.isChecked() == True:
                             GUI.horiz_lower_auto_set()
                             GUI.horiz_upper_auto_set()
-                        self.ax.set_xlim(float(self.horizLowerEntry.text()),float(self.horizUpperEntry.text()))
-                        self.ax.set_ylim(float(self.vertUnoLowerEntry.text()),float(self.vertUnoUpperEntry.text()))
+                        self.ax.set_xlim(float(GUI.horizLowerEntry.text()),float(GUI.horizUpperEntry.text()))
+                        self.ax.set_ylim(float(GUI.vertUnoLowerEntry.text()),float(GUI.vertUnoUpperEntry.text()))
                         if self.axDosActive == True:
                             self.ax2 = self.ax.twinx()
-                            self.ax.set_ylim(float(self.vertDosLowerEntry.text()), float(self.vertDosUpperEntry.text()))
+                            self.ax.set_ylim(float(GUI.vertDosLowerEntry.text()), float(GUI.vertDosUpperEntry.text()))
                         if self.axTresActive == True:
                             self.ax3 = self.ax.twinx()
-                            self.ax3.set_ylim(float(self.vertTresLowerEntry.text()), float(self.vertTresUpperEntry.text()))
+                            self.ax3.set_ylim(float(GUI.vertTresLowerEntry.text()), float(GUI.vertTresUpperEntry.text()))
                             self.ax3.spines["right"].set_position(('axes', 1.1))
                         for item in signalsMaster:
                             if isinstance(item, str) == False:
-                                if item.signalSelect.currentText() != 'None Selected' and item.numberButton.isActive == True:
+                                if item.signalSelect.currentText() != 'None Selected' and item.isActive == True:
                                     if item.radio1.isChecked() == True:
-                                        if self.bottomRadio.isChecked() == True:
+                                        if GUI.bottomRadio.isChecked() == True:
                                             self.ax.plot(
                                                 openMaster[int(item.fileSelect.currentText())].signalDict['plotDist'],
                                                 openMaster[int(item.fileSelect.currentText())].signalDict[
@@ -1152,7 +1174,7 @@ class MatplotlibWidget(FigureCanvas):
                                                     item.signalSelect.currentText()],
                                                 color=item.bgcolor)
                                     elif item.radio2.isChecked() == True:
-                                        if self.bottomRadio.isChecked() == True:
+                                        if GUI.bottomRadio.isChecked() == True:
                                             self.ax2.plot(
                                                 openMaster[int(item.fileSelect.currentText())].signalDict['plotDist'],
                                                 openMaster[int(item.fileSelect.currentText())].signalDict[
