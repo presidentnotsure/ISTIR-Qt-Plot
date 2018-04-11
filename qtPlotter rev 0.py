@@ -477,9 +477,9 @@ class Window(QtGui.QWidget):
         self.aboutTab.layout().addWidget(self.aboutLabel)
         self.tabWidget.addTab(self.aboutTab, "About")
 
-    def add_active_files(self, inputFile):
-        if str(inputFile) not in self.fileActiveList:
-            self.fileActiveList.append(str(inputFile))
+    def add_active_files(self, input_file):
+        if str(input_file) not in self.fileActiveList:
+            self.fileActiveList.append(str(input_file))
             self.fileActiveList.sort()
             for item in signalsMaster:
                 if isinstance(item, str) is False:
@@ -493,9 +493,9 @@ class Window(QtGui.QWidget):
                     self.leftPlotLayout.addWidget(item.fileCombo, 2 * item.number, 1)
         self.horiz_radio_update()
 
-    def remove_active_files(self, inputFile):
-        if str(inputFile) in self.fileActiveList:
-            self.fileActiveList.remove(str(inputFile))
+    def remove_active_files(self, input_file):
+        if str(input_file) in self.fileActiveList:
+            self.fileActiveList.remove(str(input_file))
             self.fileActiveList.sort()
             for item in signalsMaster:
                 if isinstance(item, str) is False:
@@ -528,118 +528,117 @@ class Window(QtGui.QWidget):
             self.topRadio.setChecked(True)
 
     def horiz_lower_auto_set(self):
-        minlist = []
-        maxlist = []
+        min_list = []
+        max_list = []
         if self.bottomRadio.isChecked():
             for i, val in enumerate(openMaster):
                 if not isinstance(val, str) and val.fileName != '':
-                    minlist.append(min(val.signalDict['plotDist']))
-                    maxlist.append(max(val.signalDict['plotDist']))
+                    min_list.append(min(val.signalDict['plotDist']))
+                    max_list.append(max(val.signalDict['plotDist']))
         else:
             for i, val in enumerate(openMaster):
                 if not isinstance(val, str) and val.fileName != '':
-                    minlist.append(min(val.signalDict['plotTime']))
-                    maxlist.append(max(val.signalDict['plotTime']))
+                    min_list.append(min(val.signalDict['plotTime']))
+                    max_list.append(max(val.signalDict['plotTime']))
 
-        if not minlist:
-            minlist = [0.0]
-        self.horizLowerEntry.setText(str(min(minlist)))
+        if not min_list:
+            min_list = [0.0]
+        self.horizLowerEntry.setText(str(min(min_list)))
 
     def horiz_upper_auto_set(self):
-        maxlist = []
+        max_list = []
         if self.bottomRadio.isChecked():
             for i, val in enumerate(openMaster):
                 if not isinstance(val, str) and val.fileName != '':
-                    maxlist.append(max(val.signalDict['plotDist']))
+                    max_list.append(max(val.signalDict['plotDist']))
         else:
             for i, val in enumerate(openMaster):
                 if not isinstance(val, str) and val.fileName != '':
-                    maxlist.append(max(val.signalDict['plotTime']))
-        if not maxlist:
-            maxlist = [1.0]
-        self.horizUpperEntry.setText(str(max(maxlist)))
+                    max_list.append(max(val.signalDict['plotTime']))
+        if not max_list:
+            max_list = [1.0]
+        self.horizUpperEntry.setText(str(max(max_list)))
 
-
-    def vert_lower_auto_set(self, inputAxis):
-        minlist = []
+    def vert_lower_auto_set(self, input_axis):
+        min_list = []
         for item in signalsMaster:
             if not isinstance(item, str):
                 if item.fileSelect.currentText() != '':
                     file = int(item.fileSelect.currentText())
                     signal = item.signalSelect.currentText()
-                    if item.radio1.isChecked() and inputAxis == 1:
-                        minlist.append(min(openMaster[file].signalDict[signal]))
-                    elif item.radio2.isChecked() and inputAxis == 2:
-                        minlist.append(min(openMaster[file].signalDict[signal]))
-                    elif item.radio3.isChecked() and inputAxis == 3:
-                        minlist.append(min(openMaster[file].signalDict[signal]))
+                    if item.radio1.isChecked() and input_axis == 1:
+                        min_list.append(min(openMaster[file].signalDict[signal]))
+                    elif item.radio2.isChecked() and input_axis == 2:
+                        min_list.append(min(openMaster[file].signalDict[signal]))
+                    elif item.radio3.isChecked() and input_axis == 3:
+                        min_list.append(min(openMaster[file].signalDict[signal]))
 
-        if not minlist:
-            minlist = [0.0]
+        if not min_list:
+            min_list = [0.0]
 
-        if inputAxis == 1:
-            self.vertUnoLowerEntry.setText(str(min(minlist)))
-        elif inputAxis == 2:
-            self.vertDosLowerEntry.setText(str(min(minlist)))
-        elif inputAxis == 3:
-            self.vertTresLowerEntry.setText(str(min(minlist)))
+        if input_axis == 1:
+            self.vertUnoLowerEntry.setText(str(min(min_list)))
+        elif input_axis == 2:
+            self.vertDosLowerEntry.setText(str(min(min_list)))
+        elif input_axis == 3:
+            self.vertTresLowerEntry.setText(str(min(min_list)))
 
-    def vert_upper_auto_set(self, inputAxis):
-        maxlist = []
+    def vert_upper_auto_set(self, input_axis):
+        max_list = []
         for item in signalsMaster:
             if not isinstance(item, str):
                 if item.fileSelect.currentText() != '':
                     file = int(item.fileSelect.currentText())
                     signal = item.signalSelect.currentText()
-                    if item.radio1.isChecked() and inputAxis == 1:
-                        maxlist.append(max(openMaster[file].signalDict[signal]))
-                    elif item.radio2.isChecked() and inputAxis == 2:
-                        maxlist.append(min(openMaster[file].signalDict[signal]))
-                    elif item.radio3.isChecked() and inputAxis == 3:
-                        maxlist.append(min(openMaster[file].signalDict[signal]))
+                    if item.radio1.isChecked() and input_axis == 1:
+                        max_list.append(max(openMaster[file].signalDict[signal]))
+                    elif item.radio2.isChecked() and input_axis == 2:
+                        max_list.append(min(openMaster[file].signalDict[signal]))
+                    elif item.radio3.isChecked() and input_axis == 3:
+                        max_list.append(min(openMaster[file].signalDict[signal]))
 
-        if not maxlist:
-            maxlist = [1.0]
+        if not max_list:
+            max_list = [1.0]
 
-        if inputAxis == 1:
-            self.vertUnoUpperEntry.setText(str(max(maxlist)))
-        elif inputAxis == 2:
-            self.vertDosUpperEntry.setText(str(max(maxlist)))
-        elif inputAxis == 3:
-            self.vertTresUpperEntry.setText(str(max(maxlist)))
+        if input_axis == 1:
+            self.vertUnoUpperEntry.setText(str(max(max_list)))
+        elif input_axis == 2:
+            self.vertDosUpperEntry.setText(str(max(max_list)))
+        elif input_axis == 3:
+            self.vertTresUpperEntry.setText(str(max(max_list)))
 
-    def pad_axes(self,*inputSet):
-        LowerAxes = [self.horizLowerEntry,self.vertUnoLowerEntry, self.vertDosLowerEntry, self.vertTresLowerEntry]
-        UpperAxes = [self.horizUpperEntry,self.vertUnoUpperEntry, self.vertDosUpperEntry, self.vertTresUpperEntry]
-        print(inputSet)
-        if inputSet[0] == 'horiz':
+    def pad_axes(self, *input_set):
+        lower_axes = [self.horizLowerEntry, self.vertUnoLowerEntry, self.vertDosLowerEntry, self.vertTresLowerEntry]
+        upper_axes = [self.horizUpperEntry, self.vertUnoUpperEntry, self.vertDosUpperEntry, self.vertTresUpperEntry]
+        print(input_set)
+        if input_set[0] == 'horiz':
             spanmin = 0
             spanmax = 1
-        elif inputSet[0] == 'all':
+        elif input_set[0] == 'all':
             spanmin = 0
             spanmax = 4
         else:
             spanmin = 1
             spanmax = 4
-        for i in range(spanmin,spanmax):
-            if not LowerAxes[i].text() == '0.0' and not UpperAxes[i].text() == '1.0':
-                if LowerAxes[i].text() == UpperAxes[i].text():
-                    if float(LowerAxes[i].text()) > 0:
-                        LowerAxes[i].setText(str(0.9 * float(LowerAxes[i].text())))
-                        UpperAxes[i].setText(str(1.1 * float(UpperAxes[i].text())))
-                    elif float(LowerAxes[i].text()) < 0:
-                        LowerAxes[i].setText(str(1.1 * float(LowerAxes[i].text())))
-                        UpperAxes[i].setText(str(0.9 * float(UpperAxes[i].text())))
+        for i in range(spanmin, spanmax):
+            if not lower_axes[i].text() == '0.0' and not upper_axes[i].text() == '1.0':
+                if lower_axes[i].text() == upper_axes[i].text():
+                    if float(lower_axes[i].text()) > 0:
+                        lower_axes[i].setText(str(0.9 * float(lower_axes[i].text())))
+                        upper_axes[i].setText(str(1.1 * float(upper_axes[i].text())))
+                    elif float(lower_axes[i].text()) < 0:
+                        lower_axes[i].setText(str(1.1 * float(lower_axes[i].text())))
+                        upper_axes[i].setText(str(0.9 * float(upper_axes[i].text())))
                     else:
-                        LowerAxes[i].setText('0.0')
-                        UpperAxes[i].setText('1.0')
+                        lower_axes[i].setText('0.0')
+                        upper_axes[i].setText('1.0')
                 else:
-                    UpperAxes[i].setText(str(float(UpperAxes[i].text()) +
-                                                 0.1 * (float(UpperAxes[i].text()) -
-                                                        float(LowerAxes[i].text()))))
-                    LowerAxes[i].setText(str(float(LowerAxes[i].text()) -
-                                                 0.1 * (float(UpperAxes[i].text()) -
-                                                        float(LowerAxes[i].text()))))
+                    upper_axes[i].setText(str(float(upper_axes[i].text()) +
+                                              0.1 * (float(upper_axes[i].text()) -
+                                                     float(lower_axes[i].text()))))
+                    lower_axes[i].setText(str(float(lower_axes[i].text()) -
+                                              0.1 * (float(upper_axes[i].text()) -
+                                                     float(lower_axes[i].text()))))
 
 
 class OpenFile(QtGui.QFrame):
@@ -740,11 +739,11 @@ class OpenFile(QtGui.QFrame):
         self.initial_read()
 
     def file_grab(self):
-        self.fileDialog = QtGui.QWidget()
+        self.fileDialog = QtGui.QFileDialog()
         self.fileNameOld = self.fileName
         try:
             self.fileName = QtGui.QFileDialog.getOpenFileName(self.fileDialog, 'Open File', '/')[0]
-        except:
+        except NameError:
             pass
         if self.fileName == '':
             self.fileName = self.fileNameOld
@@ -778,7 +777,7 @@ class OpenFile(QtGui.QFrame):
                 for i, val in enumerate(line.strip().split(',')):
                     try:
                         self.signalDict[self.signalList[i]].append(float(val))
-                    except:
+                    except NameError:
                         self.signalDict[self.signalList[i]] = [float(val)]
             else:
                 self.signalList.append(line.strip())
@@ -794,10 +793,10 @@ class OpenFile(QtGui.QFrame):
         if 'Weld Distance, mm' in self.signalList:
             self.signalDict['plotDist'] = self.signalDict['Weld Distance, mm']
 
-        #print(len(self.signalDict['plotTime']))
-        #print(len(self.signalDict['Weld Time, sec']))
-        #print(len(self.signalDict['None Selected']))
-        #print(len(self.signalDict[self.signalList[12]]))
+        # print(len(self.signalDict['plotTime']))
+        # print(len(self.signalDict['Weld Time, sec']))
+        # print(len(self.signalDict['None Selected']))
+        # print(len(self.signalDict[self.signalList[12]]))
         GUI.add_active_files(self.number)
 
     def weld_data_read(self):
@@ -875,7 +874,8 @@ class OpenFile(QtGui.QFrame):
         self.schedulePanel.show()
 
     def copy_to_clipboard(self, item):
-        if type(item) is list:
+        #  self.fileName to make it non-static eligible
+        if type(item) is list and self.fileName:
             tempstring = ''
             for val in item:
                 tempstring += val + '\r\n'
@@ -1046,10 +1046,10 @@ class Signals(QtGui.QWidget):
 
 
 class MatplotlibWidget(FigureCanvas):
-    def __init__(self, parent=None):
+    def __init__(self):
         super(MatplotlibWidget, self).__init__(Figure())
         self.figure = plt.figure(tight_layout=True, dpi=600, linewidth=2)
-        #print(plt.rcParams)
+        # print(plt.rcParams)
         plt.rc('font', size=1.5)
         plt.rc('lines', linewidth=.4)
         plt.rc('xtick.major', pad=0, size=1, width=0.2)
@@ -1058,7 +1058,7 @@ class MatplotlibWidget(FigureCanvas):
         plt.rc('ytick.minor', pad=0, size=1, width=0.2)
         plt.rc('axes', linewidth=0.2)
         plt.rc('figure', frameon=False)
-        plt.rc('figure.subplot', bottom= 0.1, hspace= 0.1, left= 0.01, right= 0.1, top= 0.1, wspace= 0.1)
+        plt.rc('figure.subplot', bottom=0.1, hspace=0.1, left=0.01, right=0.1, top=0.1, wspace=0.1)
 
         # https://matplotlib.org/users/customizing.html
         self.canvas = FigureCanvas(self.figure)
@@ -1111,7 +1111,7 @@ class MatplotlibWidget(FigureCanvas):
                                         item.signalSelect.currentText()],
                                     color=item.bgcolor)
                                 print(min(openMaster[int(item.fileSelect.currentText())].signalDict[
-                                        item.signalSelect.currentText()]))
+                                              item.signalSelect.currentText()]))
                                 print(max(openMaster[int(item.fileSelect.currentText())].signalDict[
                                               item.signalSelect.currentText()]))
                         elif item.radio2.isChecked():
@@ -1174,14 +1174,13 @@ class MatplotlibWidget(FigureCanvas):
             else:
                 self.ax3.set_visible(False)
 
-
-            #self.ax.axhline(y=0, xmin=-10, xmax=10, c='black')
+            # self.ax.axhline(y=0, xmin=-10, xmax=10, c='black')
             self.canvas.draw()
             GUI.rightPlotLayout.addWidget(self.canvas)
 
 
 app = QtGui.QApplication(sys.argv)
-theme = QtGui.QApplication.setStyle('Plastique')
+app.setStyle('Plastique')
 GUI = Window()
 
 open1 = OpenFile(1)
@@ -1208,8 +1207,6 @@ signals9 = Signals('#bcbd22', 'black', 9)
 signals10 = Signals('#17becf', 'black', 10)
 signalsMaster = ['signalHeader', signals1, signals2, signals3, signals4, signals5, signals6, signals7, signals8,
                  signals9, signals10]
-
-
 
 plotFrame = MatplotlibWidget()
 plotFrame.build_plot()
