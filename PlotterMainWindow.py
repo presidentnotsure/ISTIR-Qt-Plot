@@ -4,11 +4,13 @@ from PySide import QtGui, QtCore
 
 
 class Window(QtGui.QWidget):
-    def __init__(self):
+    def __init__(self, signals_master, open_master):
         super(Window, self).__init__()
         self.setGeometry(50, 50, 1366, 768)
         self.setWindowTitle("ISTIR Weld Data Plotter")
         self.setWindowIcon(QtGui.QIcon('par.ico'))
+        self.signalsMaster = signals_master
+        self.openMaster = open_master
 
         self.windowLayout = QtGui.QGridLayout(self)
         self.windowLayout.setContentsMargins(5, 5, 5, 5)
@@ -21,7 +23,6 @@ class Window(QtGui.QWidget):
         self.plot_tab()
         self.about_tab()
 
-        # self.tabWidget.currentChanged.connect(plotFrame.build_plot)
         self.fileActiveList = []
 
         self.signals_header()
@@ -477,7 +478,7 @@ class Window(QtGui.QWidget):
         if str(input_file) not in self.fileActiveList:
             self.fileActiveList.append(str(input_file))
             self.fileActiveList.sort()
-            for item in signalsMaster:
+            for item in self.signalsMaster:
                 if isinstance(item, str) is False:
                     item.fileSelect.clear()
                     item.fileSelect.addItems(self.fileActiveList)
@@ -493,7 +494,7 @@ class Window(QtGui.QWidget):
         if str(input_file) in self.fileActiveList:
             self.fileActiveList.remove(str(input_file))
             self.fileActiveList.sort()
-            for item in signalsMaster:
+            for item in self.signalsMaster:
                 if isinstance(item, str) is False:
                     item.fileSelect.clear()
                     item.fileSelect.addItems(self.fileActiveList)
@@ -511,7 +512,7 @@ class Window(QtGui.QWidget):
     def horiz_radio_update(self):
         self.radioList = []
         self.count = 0
-        for item in signalsMaster:
+        for item in self.signalsMaster:
             if not isinstance(item, str):
                 self.radioList += item.selectList
         for item in self.radioList:
@@ -527,12 +528,12 @@ class Window(QtGui.QWidget):
         min_list = []
         max_list = []
         if self.bottomRadio.isChecked():
-            for i, val in enumerate(openMaster):
+            for i, val in enumerate(self.openMaster):
                 if not isinstance(val, str) and val.fileName != '':
                     min_list.append(min(val.signalDict['plotDist']))
                     max_list.append(max(val.signalDict['plotDist']))
         else:
-            for i, val in enumerate(openMaster):
+            for i, val in enumerate(self.openMaster):
                 if not isinstance(val, str) and val.fileName != '':
                     min_list.append(min(val.signalDict['plotTime']))
                     max_list.append(max(val.signalDict['plotTime']))
@@ -544,11 +545,11 @@ class Window(QtGui.QWidget):
     def horiz_upper_auto_set(self):
         max_list = []
         if self.bottomRadio.isChecked():
-            for i, val in enumerate(openMaster):
+            for i, val in enumerate(self.openMaster):
                 if not isinstance(val, str) and val.fileName != '':
                     max_list.append(max(val.signalDict['plotDist']))
         else:
-            for i, val in enumerate(openMaster):
+            for i, val in enumerate(self.openMaster):
                 if not isinstance(val, str) and val.fileName != '':
                     max_list.append(max(val.signalDict['plotTime']))
         if not max_list:
@@ -557,17 +558,17 @@ class Window(QtGui.QWidget):
 
     def vert_lower_auto_set(self, input_axis):
         min_list = []
-        for item in signalsMaster:
+        for item in self.signalsMaster:
             if not isinstance(item, str):
                 if item.fileSelect.currentText() != '':
                     file = int(item.fileSelect.currentText())
                     signal = item.signalSelect.currentText()
                     if item.radio1.isChecked() and input_axis == 1:
-                        min_list.append(min(openMaster[file].signalDict[signal]))
+                        min_list.append(min(self.openMaster[file].signalDict[signal]))
                     elif item.radio2.isChecked() and input_axis == 2:
-                        min_list.append(min(openMaster[file].signalDict[signal]))
+                        min_list.append(min(self.openMaster[file].signalDict[signal]))
                     elif item.radio3.isChecked() and input_axis == 3:
-                        min_list.append(min(openMaster[file].signalDict[signal]))
+                        min_list.append(min(self.openMaster[file].signalDict[signal]))
 
         if not min_list:
             min_list = [0.0]
@@ -581,17 +582,17 @@ class Window(QtGui.QWidget):
 
     def vert_upper_auto_set(self, input_axis):
         max_list = []
-        for item in signalsMaster:
+        for item in self.signalsMaster:
             if not isinstance(item, str):
                 if item.fileSelect.currentText() != '':
                     file = int(item.fileSelect.currentText())
                     signal = item.signalSelect.currentText()
                     if item.radio1.isChecked() and input_axis == 1:
-                        max_list.append(max(openMaster[file].signalDict[signal]))
+                        max_list.append(max(self.openMaster[file].signalDict[signal]))
                     elif item.radio2.isChecked() and input_axis == 2:
-                        max_list.append(min(openMaster[file].signalDict[signal]))
+                        max_list.append(min(self.openMaster[file].signalDict[signal]))
                     elif item.radio3.isChecked() and input_axis == 3:
-                        max_list.append(min(openMaster[file].signalDict[signal]))
+                        max_list.append(min(self.openMaster[file].signalDict[signal]))
 
         if not max_list:
             max_list = [1.0]
@@ -606,13 +607,13 @@ class Window(QtGui.QWidget):
     def pad_axes(self, *input_set):
         lower_axes = [self.horizLowerEntry, self.vertUnoLowerEntry, self.vertDosLowerEntry, self.vertTresLowerEntry]
         upper_axes = [self.horizUpperEntry, self.vertUnoUpperEntry, self.vertDosUpperEntry, self.vertTresUpperEntry]
-        print(input_set)
-        if input_set[0] == 'horiz':
-            spanmin = 0
-            spanmax = 1
-        elif input_set[0] == 'all':
-            spanmin = 0
-            spanmax = 4
+        if len(input_set) > 0:
+            if input_set[0] == 'horiz':
+                spanmin = 0
+                spanmax = 1
+            elif input_set[0] == 'all':
+                spanmin = 0
+                spanmax = 4
         else:
             spanmin = 1
             spanmax = 4

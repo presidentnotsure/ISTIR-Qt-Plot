@@ -7,9 +7,11 @@ from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 
 
 class MatplotlibWidget(FigureCanvas):
-    def __init__(self, main_window):
+    def __init__(self, main_window, signals_master, open_master):
         super(MatplotlibWidget, self).__init__(Figure())
         self.main_window = main_window
+        self.signalsMaster = signals_master
+        self.openMaster = open_master
         self.figure = plt.figure(tight_layout=True, dpi=600, linewidth=2)
         # print(plt.rcParams)
         plt.rc('font', size=1.5)
@@ -43,7 +45,7 @@ class MatplotlibWidget(FigureCanvas):
 
     def build_plot(self):
         if self.main_window.tabWidget.currentIndex() == 2:
-            for item in signalsMaster:
+            for item in self.signalsMaster:
                 if not isinstance(item, str):
                     if item.isActive and item.fileSelect.currentText() != '':
                         if not isinstance(item, str):
@@ -55,51 +57,51 @@ class MatplotlibWidget(FigureCanvas):
                                 self.axTresActive = True
                         if self.axUnoActive and self.axDosActive and self.axTresActive:
                             break
-            for item in signalsMaster:
+            for item in self.signalsMaster:
                 if not isinstance(item, str):
                     if item.signalSelect.currentText() != 'None Selected' and item.isActive:
                         if item.radio1.isChecked():
                             if self.main_window.bottomRadio.isChecked():
                                 self.ax.plot(
-                                    openMaster[int(item.fileSelect.currentText())].signalDict['plotDist'],
-                                    openMaster[int(item.fileSelect.currentText())].signalDict[
+                                    self.openMaster[int(item.fileSelect.currentText())].signalDict['plotDist'],
+                                    self.openMaster[int(item.fileSelect.currentText())].signalDict[
                                         item.signalSelect.currentText()],
                                     color=item.bgcolor)
 
                             else:
                                 self.ax.plot(
-                                    openMaster[int(item.fileSelect.currentText())].signalDict['plotTime'],
-                                    openMaster[int(item.fileSelect.currentText())].signalDict[
+                                    self.openMaster[int(item.fileSelect.currentText())].signalDict['plotTime'],
+                                    self.openMaster[int(item.fileSelect.currentText())].signalDict[
                                         item.signalSelect.currentText()],
                                     color=item.bgcolor)
-                                print(min(openMaster[int(item.fileSelect.currentText())].signalDict[
+                                print(min(self.openMaster[int(item.fileSelect.currentText())].signalDict[
                                               item.signalSelect.currentText()]))
-                                print(max(openMaster[int(item.fileSelect.currentText())].signalDict[
+                                print(max(self.openMaster[int(item.fileSelect.currentText())].signalDict[
                                               item.signalSelect.currentText()]))
                         elif item.radio2.isChecked():
                             if self.main_window.bottomRadio.isChecked():
                                 self.ax2.plot(
-                                    openMaster[int(item.fileSelect.currentText())].signalDict['plotDist'],
-                                    openMaster[int(item.fileSelect.currentText())].signalDict[
+                                    self.openMaster[int(item.fileSelect.currentText())].signalDict['plotDist'],
+                                    self.openMaster[int(item.fileSelect.currentText())].signalDict[
                                         item.signalSelect.currentText()],
                                     color=item.bgcolor)
                             else:
                                 self.ax2.plot(
-                                    openMaster[int(item.fileSelect.currentText())].signalDict['plotTime'],
-                                    openMaster[int(item.fileSelect.currentText())].signalDict[
+                                    self.openMaster[int(item.fileSelect.currentText())].signalDict['plotTime'],
+                                    self.openMaster[int(item.fileSelect.currentText())].signalDict[
                                         item.signalSelect.currentText()],
                                     color=item.bgcolor)
                         elif item.radio3.isChecked():
                             if self.main_window.bottomRadio.isChecked():
                                 self.ax3.plot(
-                                    openMaster[int(item.fileSelect.currentText())].signalDict['plotDist'],
-                                    openMaster[int(item.fileSelect.currentText())].signalDict[
+                                    self.openMaster[int(item.fileSelect.currentText())].signalDict['plotDist'],
+                                    self.openMaster[int(item.fileSelect.currentText())].signalDict[
                                         item.signalSelect.currentText()],
                                     color=item.bgcolor)
                             else:
                                 self.ax3.plot(
-                                    openMaster[int(item.fileSelect.currentText())].signalDict['plotTime'],
-                                    openMaster[int(item.fileSelect.currentText())].signalDict[
+                                    self.openMaster[int(item.fileSelect.currentText())].signalDict['plotTime'],
+                                    self.openMaster[int(item.fileSelect.currentText())].signalDict[
                                         item.signalSelect.currentText()],
                                     color=item.bgcolor)
 

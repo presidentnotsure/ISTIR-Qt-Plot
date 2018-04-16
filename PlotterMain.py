@@ -5,11 +5,16 @@ import pyperclip
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
-from PlotterOpen import OpenFile
+from PlotterMainWindow import *
+from PlotterOpen import *
+from PlotterCanvas import *
+from PlotterSignals import *
 
 app = QtGui.QApplication(sys.argv)
 app.setStyle('Plastique')
-GUI = Window()
+openMaster = ['blank']
+signalsMaster = ['signalHeader']
+GUI = Window(signalsMaster, openMaster)
 
 #Create and group file open GUI items and support structure
 open1 = OpenFile(1, GUI)
@@ -38,7 +43,7 @@ signals10 = Signals('#17becf', 'black', 10, GUI)
 signalsMaster = ['signalHeader', signals1, signals2, signals3, signals4, signals5, signals6, signals7, signals8,
                  signals9, signals10]
 
-plotFrame = MatplotlibWidget(GUI)
+plotFrame = MatplotlibWidget(GUI, signalsMaster, openMaster)
 plotFrame.build_plot()
 GUI.tabWidget.currentChanged.connect(plotFrame.build_plot)
 
